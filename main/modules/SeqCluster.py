@@ -138,7 +138,7 @@ class SeqCluster:
                           shape=(num_of_clusters, num_of_clusters)).toarray()
 
     @staticmethod
-    def _sort_src_cluster_by_desc_inter_src_cluster_edge_weights(global_edge_weight_mtrx, src_cluster_ids):
+    def _sort_src_clusters(global_edge_weight_mtrx, src_cluster_ids, src_cluster_edge_counts):
         cluster_mtrx_idxs = np.ix_(src_cluster_ids, src_cluster_ids)
 
         all_sorted_edge_idxs = np.unravel_index(np.argsort(global_edge_weight_mtrx[cluster_mtrx_idxs], axis=None),
@@ -149,14 +149,31 @@ class SeqCluster:
         sorted_src_cluster_ids = list()
         proc_src_cluster_ids = set()
 
-        for inter_src_cluster_edge in np.flipud(all_sorted_edges[all_sorted_edges[:, 0] < all_sorted_edges[:, 1]]):
-            if inter_src_cluster_edge[0] not in proc_src_cluster_ids:
-                sorted_src_cluster_ids.append(inter_src_cluster_edge[0])
-                proc_src_cluster_ids.add(inter_src_cluster_edge[0])
+        for src_cluster_id1, src_cluster_id2 in \
+            np.flipud(all_sorted_edges[all_sorted_edges[:, 0] < all_sorted_edges[:, 1]]):
+            if src_cluster_id1 in proc_src_cluster_ids:
+                if src_cluster_id2 in proc_src_cluster_ids:
+                    continue
 
-            if inter_src_cluster_edge[1] not in proc_src_cluster_ids:
-                sorted_src_cluster_ids.append(inter_src_cluster_edge[1])
-                proc_src_cluster_ids.add(inter_src_cluster_edge[1])
+                sorted_src_cluster_ids.append(src_cluster_id2)
+                proc_src_cluster_ids.add(src_cluster_id2)
+                continue
+            elif src_cluster_id2 in proc_src_cluster_ids:
+                sorted_src_cluster_ids.append(src_cluster_id1)
+                proc_src_cluster_ids.add(src_cluster_id1)
+                continue
+
+            if src_cluster_edge_counts[src_cluster_id1, src_cluster_id1] < \
+                src_cluster_edge_counts[src_cluster_id2, src_cluster_id2]:
+                sorted_src_cluster_ids.append(src_cluster_id2)
+                proc_src_cluster_ids.add(src_cluster_id2)
+                sorted_src_cluster_ids.append(src_cluster_id1)
+                proc_src_cluster_ids.add(src_cluster_id1)
+            else:
+                sorted_src_cluster_ids.append(src_cluster_id1)
+                proc_src_cluster_ids.add(src_cluster_id1)
+                sorted_src_cluster_ids.append(src_cluster_id2)
+                proc_src_cluster_ids.add(src_cluster_id2)
 
         return src_cluster_ids[sorted_src_cluster_ids]
 
@@ -165,8 +182,7 @@ class SeqCluster:
         src_cluster_bins = list()
         bin_avg_inter_src_cluster_edge_weights = dict()
 
-        for src_cluster_id in cls._sort_src_cluster_by_desc_inter_src_cluster_edge_weights(global_edge_weight_mtrx,
-                                                                                           src_cluster_ids):
+        for src_cluster_id in cls._sort_src_clusters(global_edge_weight_mtrx, src_cluster_ids, src_cluster_edge_counts):
             if len(src_cluster_bins) == 0:
                 src_cluster_bins.append([src_cluster_id])
                 bin_avg_inter_src_cluster_edge_weights[str(src_cluster_id)] = global_edge_weight_mtrx[src_cluster_id,
