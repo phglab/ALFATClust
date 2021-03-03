@@ -34,7 +34,7 @@ class Precluster:
         return read_seq_file_for_preclusters(seq_file_path, seq_name_to_precluster_map), np.max(precluster_sizes)
 
     @classmethod
-    def precluster_seq_file(cls, user_params, seq_file_path):
+    def precluster_seq_file(cls, user_params, seq_file_path, max_seq_len):
         cls._temp_dir_path = mkdtemp()
 
         seq_db_file_name_prefix = 'seq_db'
@@ -53,6 +53,10 @@ class Precluster:
                                                                         seq_precluster_db_file_path_prefix,
                                                                         temp_cluster_dir_path,
                                                                         user_params.res_param_end, 0.001)
+
+        if max_seq_len > 65535:
+            mmseqs_cluster_cmd = '{} --max-seq-len {}'.format(mmseqs_cluster_cmd, max_seq_len)
+
         subprocess.run(args=shlex.split(mmseqs_cluster_cmd), stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
                        universal_newlines=True)
 

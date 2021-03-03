@@ -25,17 +25,22 @@ def set_and_parse_args(config):
                         help='Output cluster file path')
     parser.add_argument('-e', '--evaluate', action='store', dest='cluster_eval_csv_file_path',
                         help='Sequence cluster evaluation output CSV file path')
-    help_msg = 'Lower bound for resolution parameter range [{}]'.format(config.res_param_end)
-    parser.add_argument('-l', '--lower', type=float, help=help_msg, default=config.res_param_end)
-    help_msg = 'Resolution parameter step size [{}]'.format(config.res_param_step_size)
-    parser.add_argument('-u', '--step', type=float, help=help_msg, default=config.res_param_step_size)
+    help_msg = 'Lower bound for resolution parameter range [{}]'
+    parser.add_argument('-l', '--low', type=float, help=help_msg.format(config.res_param_end),
+                        default=config.res_param_end)
+    help_msg = 'Resolution parameter step size [{}]'
+    parser.add_argument('-u', '--step', type=float, help=help_msg.format(config.res_param_step_size),
+                        default=config.res_param_step_size)
     parser.add_argument('-f', '--filter', type=float, help='Pairwise shared hash ratio threshold for filtering')
     parser.add_argument('-p', '--precluster', action='store_true', dest='is_precluster',
                         help='Always pre-cluster sequences into individual subsets for separate clustering')
     parser.add_argument('-k', '--kmer', type=int, help='K-mer size for Mash')
     parser.add_argument('-s', '--sketch', type=int, help='Sketch size for Mash')
-    help_msg = 'No. of threads to be used [{}]'.format(num_of_threads)
-    parser.add_argument('-t', '--thread', type=int, help=help_msg, default=num_of_threads)
+    help_msg = 'Filter edge weights below (lower bound of resolution parameter - margin [{}])'
+    parser.add_argument('-m', '--margin', type=float, help=help_msg.format(config.noise_filter_margin),
+                        default=config.noise_filter_margin)
+    help_msg = 'No. of threads to be used [{}]'
+    parser.add_argument('-t', '--thread', type=int, help=help_msg.format(num_of_threads), default=num_of_threads)
     parser.add_argument('-S', '--seed', type=int, help='Seed value')
 
     return parser.parse_args()
@@ -44,10 +49,10 @@ def parse_to_user_params(args, config):
     param_error_log = list()
 
     UserParams = namedtuple('UserParams', ['res_param_start', 'res_param_end', 'res_param_step_size', 'precision',
-                                           'noise_filter_thres', 'precluster_thres', 'min_shared_hash_ratio',
-                                           'kmer_size', 'default_dna_kmer_size', 'default_protein_kmer_size',
-                                           'sketch_size', 'default_dna_sketch_size', 'default_protein_sketch_size',
-                                           'num_of_threads', 'seed'])
+                                           'precluster_thres', 'min_shared_hash_ratio', 'kmer_size',
+                                           'default_dna_kmer_size', 'default_protein_kmer_size', 'sketch_size',
+                                           'default_dna_sketch_size', 'default_protein_sketch_size',
+                                           'noise_filter_thres', 'num_of_threads', 'seed'])
 
     if not os.path.isfile(args.seq_file_path):
         param_error_log.append('Sequence file \'{}\' does not exist'.format(args.seq_file_path))
@@ -56,18 +61,14 @@ def parse_to_user_params(args, config):
         param_error_log.append('Resolution parameter range start must be > 0 and <= 1')
         param_error_log.append('Please check the configuration file')
 
-    if config.noise_filter_thres > 0.6 or config.noise_filter_thres <= 0:
-        param_error_log.append('Noise filtering threshold start must be > 0 and <= 0.6')
-        param_error_log.append('Please check the configuration file')
-
     if config.precluster_thres <= 0:
         param_error_log.append('Precluster threshold must be positive integer')
         param_error_log.append('Please check the configuration file')
 
-    if args.lower > 1 or args.lower <= 0:
+    if args.low > 1 or args.low <= 0:
         param_error_log.append('Lower bound for resolution parameter range must be > 0 and <= 1')
 
-    if args.lower >= config.res_param_start:
+    if args.low >= config.res_param_start:
         param_error_log.append('Lower bound for resolution parameter range must be smaller than upper bound')
 
     if args.step > 1 or args.step <= 0:
@@ -98,6 +99,10 @@ def parse_to_user_params(args, config):
     elif args.sketch <= 0:
         param_error_log.append('Sketch size must be a positive integer')
 
+    if args.margin >= 1 or args.margin < 0:
+        param_error_log.append('Edge weight filtering margin must be >= 0 and < 1')
+        param_error_log.append('Please check the configuration file')
+
     if args.thread <= 0:
         param_error_log.append('No. of threads must be a positive integer')
 
@@ -107,10 +112,12 @@ def parse_to_user_params(args, config):
     if len(param_error_log) > 0:
         return None, param_error_log
 
-    return UserParams(config.res_param_start, args.lower, -1 * args.step, get_precision(args.step),
-                      config.noise_filter_thres, config.precluster_thres, args.filter, args.kmer,
-                      config.default_dna_kmer_size, config.default_protein_kmer_size, args.sketch,
-                      config.default_dna_sketch_size, config.default_protein_sketch_size, args.thread, args.seed), None
+    noise_filter_thres = max(0, args.low - args.margin)
+
+    return UserParams(config.res_param_start, args.low, -1 * args.step, get_precision(args.step),
+                      config.precluster_thres, args.filter, args.kmer, config.default_dna_kmer_size,
+                      config.default_protein_kmer_size, args.sketch, config.default_dna_sketch_size,
+                      config.default_protein_sketch_size, noise_filter_thres, args.thread, args.seed), None
 
 def display_user_params(user_params):
     print('---------------------------------------------')
@@ -197,8 +204,8 @@ if __name__ == '__main__':
 
         if is_precluster_mode:
             print('Pre-clustering sequences into subsets...')
-            precluster_to_seq_recs_map, max_precluster_size = Precluster.precluster_seq_file(user_params,
-                                                                                             args.seq_file_path)
+            precluster_to_seq_recs_map, max_precluster_size = \
+                Precluster.precluster_seq_file(user_params, args.seq_file_path, seq_file_info.max_seq_len)
             num_of_preclusters = len(precluster_to_seq_recs_map)
             print('{} individual subsets to be clustered'.format(num_of_preclusters))
 
@@ -236,7 +243,7 @@ if __name__ == '__main__':
                     process_count += 1
                     print('{} / {} subsets processed'.format(process_count, num_of_preclusters), end='\r')
         else:
-            print('Estimating pairwise sequence distance...')
+            print('Estimating pairwise sequence distances...')
             global_edge_weight_mtrx = SeqSimilarity.get_pairwise_similarity(seq_file_info)
 
             if args.cluster_eval_csv_file_path is not None:

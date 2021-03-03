@@ -37,7 +37,7 @@ def _check_seq_len(seq_type, seq_len, kmer_size, default_dna_kmer_size, default_
 def read_seq_file(seq_file_path, user_params=None):
     SeqFileInfo = namedtuple('SeqFileInfo', ['mash_seq_name_to_seq_id_map', 'seq_id_to_seq_name_map',
                                              'error_log', 'seq_file_path', 'seq_type', 'mash_last_seq_name',
-                                             'seq_count'])
+                                             'seq_count', 'max_seq_len'])
     mash_seq_name_to_seq_id_map = dict()
     seq_id_to_seq_name_map = dict()
     seq_error_log = list()
@@ -45,6 +45,7 @@ def read_seq_file(seq_file_path, user_params=None):
     last_seq_name = None
     mash_last_seq_name = None
     seq_count = 0
+    max_seq_len = 0
 
     is_check_seq_len = user_params is not None
     if is_check_seq_len:
@@ -69,11 +70,16 @@ def read_seq_file(seq_file_path, user_params=None):
                 seq_error_log.append('The input sequences consist of both DNA and protein sequences')
                 break
 
+            seq_len = len(seq_record.seq)
+
             if is_check_seq_len:
-                is_invalid_seq_len, true_kmer_size = _check_seq_len(seq_type, len(seq_record.seq), kmer_size,
-                                                                    default_dna_kmer_size, default_protein_kmer_size)
+                is_invalid_seq_len, true_kmer_size = _check_seq_len(seq_type, seq_len, kmer_size, default_dna_kmer_size,
+                                                                    default_protein_kmer_size)
                 if is_invalid_seq_len:
                     seq_error_log.append(short_seq_len_msg.format(seq_record.description, true_kmer_size))
+
+            if seq_len > max_seq_len:
+                max_seq_len = seq_len
 
             mash_last_seq_name = _convert_to_mash_seq_name(last_seq_name)
             mash_seq_name_to_seq_id_map[mash_last_seq_name] = seq_count
@@ -84,7 +90,7 @@ def read_seq_file(seq_file_path, user_params=None):
         seq_error_log.append('No valid sequences found in \'{}\''.format(seq_file_path))
 
     return SeqFileInfo(mash_seq_name_to_seq_id_map, seq_id_to_seq_name_map, seq_error_log, seq_file_path, \
-                       file_seq_type, mash_last_seq_name, seq_count)
+                       file_seq_type, mash_last_seq_name, seq_count, max_seq_len)
 
 def read_seq_file_for_preclusters(seq_file_path, seq_name_to_precluster_map):
     precluster_to_seq_recs_map = dict()

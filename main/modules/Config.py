@@ -6,12 +6,13 @@ START_VAL = 'Start'
 END_VAL = 'End'
 STEP_SIZE = 'StepSize'
 THRESHOLD_SECTION = 'Threshold'
-NOISE_FILTER = 'NoiseFilter'
 PRECLUSTER = 'Precluster'
 DNA_MASH_SECTION = 'DNAMash'
 KMER_SIZE = 'Kmer'
 SKETCH_SIZE = 'Sketch'
 PROTEIN_MASH_SECTION = 'ProteinMash'
+NOISE_FILTER_SECTION = 'NoiseFilter'
+MARGIN = 'Margin'
 DNA_EVAL_SECTION = 'DNAEvaluation'
 MATCH_SCORE = 'MatchScore'
 MISMATCH_PENALTY = 'MismatchPenalty'
@@ -38,7 +39,6 @@ class Config:
         self._res_param_end = float(config_settings[RES_PARAM_SECTION][END_VAL])
         self._res_param_step_size = float(config_settings[RES_PARAM_SECTION][STEP_SIZE])
 
-        self._noise_filter_thres = float(config_settings[THRESHOLD_SECTION][NOISE_FILTER])
         self._precluster_thres = int(config_settings[THRESHOLD_SECTION][PRECLUSTER])
 
         self._default_dna_kmer_size = int(config_settings[DNA_MASH_SECTION][KMER_SIZE])
@@ -46,6 +46,8 @@ class Config:
 
         self._default_protein_kmer_size = int(config_settings[PROTEIN_MASH_SECTION][KMER_SIZE])
         self._default_protein_sketch_size = int(config_settings[PROTEIN_MASH_SECTION][SKETCH_SIZE])
+
+        self._noise_filter_margin = float(config_settings[NOISE_FILTER_SECTION][MARGIN])
 
         self._dna_match_score = float(config_settings[DNA_EVAL_SECTION][MATCH_SCORE])
         if self._dna_match_score < 0:
@@ -86,10 +88,6 @@ class Config:
         return self._res_param_step_size
 
     @property
-    def noise_filter_thres(self):
-        return self._noise_filter_thres
-
-    @property
     def precluster_thres(self):
         return self._precluster_thres
 
@@ -108,6 +106,10 @@ class Config:
     @property
     def default_protein_sketch_size(self):
         return self._default_protein_sketch_size
+
+    @property
+    def noise_filter_margin(self):
+        return self._noise_filter_margin
 
     @property
     def dna_match_score(self):
