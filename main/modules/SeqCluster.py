@@ -293,8 +293,8 @@ class SeqCluster:
             last_seq_cluster_ptrs = cls._convert_cluster_ptrs(src_cluster_ptrs, last_seq_cluster_ptrs)
 
             if cls._is_verbose:
-                print('{} clusters obtained at resolution parameter {}'.format(np.max(last_seq_cluster_ptrs) + 1,
-                                                                               res_param))
+                proc_msg = '{} clusters obtained at average estimated similarity {}'
+                print(proc_msg.format(np.max(last_seq_cluster_ptrs) + 1, res_param))
 
             if np.max(last_seq_cluster_ptrs) == 0 or np.all(np.triu(global_edge_weight_mtrx, k=1) <= 0):
                 if cls._is_verbose:

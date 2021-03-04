@@ -7,7 +7,7 @@ from modules.ClusterEval import ClusterEval
 from modules.Precluster import Precluster
 from modules.SeqCluster import SeqCluster
 from modules.SeqSimilarity import SeqSimilarity
-from modules.Utils import read_seq_file, convert_to_seq_clusters, get_precision
+from modules.Utils import read_seq_file, convert_to_seq_clusters, get_max_precision
 from multiprocessing import Pool
 from scipy.sparse import coo_matrix
 import argparse
@@ -25,10 +25,10 @@ def set_and_parse_args(config):
                         help='Output cluster file path')
     parser.add_argument('-e', '--evaluate', action='store', dest='cluster_eval_csv_file_path',
                         help='Sequence cluster evaluation output CSV file path')
-    help_msg = 'Lower bound for resolution parameter range [{}]'
+    help_msg = 'Lower bound for estimated similarity range [{}]'
     parser.add_argument('-l', '--low', type=float, help=help_msg.format(config.res_param_end),
                         default=config.res_param_end)
-    help_msg = 'Resolution parameter step size [{}]'
+    help_msg = 'Estimated similarity step size [{}]'
     parser.add_argument('-u', '--step', type=float, help=help_msg.format(config.res_param_step_size),
                         default=config.res_param_step_size)
     parser.add_argument('-f', '--filter', type=float, help='Pairwise shared hash ratio threshold for filtering')
@@ -36,7 +36,7 @@ def set_and_parse_args(config):
                         help='Always pre-cluster sequences into individual subsets for separate clustering')
     parser.add_argument('-k', '--kmer', type=int, help='K-mer size for Mash')
     parser.add_argument('-s', '--sketch', type=int, help='Sketch size for Mash')
-    help_msg = 'Filter edge weights below (lower bound of resolution parameter - margin [{}])'
+    help_msg = 'Discard estimated similarity values below (lower bound of estimated similarity - margin [{}])'
     parser.add_argument('-m', '--margin', type=float, help=help_msg.format(config.noise_filter_margin),
                         default=config.noise_filter_margin)
     help_msg = 'No. of threads to be used [{}]'
@@ -58,7 +58,7 @@ def parse_to_user_params(args, config):
         param_error_log.append('Sequence file \'{}\' does not exist'.format(args.seq_file_path))
 
     if config.res_param_start > 1 or config.res_param_start <= 0:
-        param_error_log.append('Resolution parameter range start must be > 0 and <= 1')
+        param_error_log.append('Upper bound for estimated similarity range must be > 0 and <= 1')
         param_error_log.append('Please check the configuration file')
 
     if config.precluster_thres <= 0:
@@ -66,13 +66,13 @@ def parse_to_user_params(args, config):
         param_error_log.append('Please check the configuration file')
 
     if args.low > 1 or args.low <= 0:
-        param_error_log.append('Lower bound for resolution parameter range must be > 0 and <= 1')
+        param_error_log.append('Lower bound for estimated similarity range must be > 0 and <= 1')
 
     if args.low >= config.res_param_start:
-        param_error_log.append('Lower bound for resolution parameter range must be smaller than upper bound')
+        param_error_log.append('Lower bound for estimated similarity range must be smaller than upper bound')
 
     if args.step > 1 or args.step <= 0:
-        param_error_log.append('Resolution parameter step size must be > 0 and <= 1')
+        param_error_log.append('Estimated similarity step size must be > 0 and <= 1')
 
     if args.filter is not None and (args.filter >= 1 or args.filter <= 0):
         param_error_log.append('Pairwise shared hash ratio threshold must be > 0 and < 1')
@@ -100,8 +100,7 @@ def parse_to_user_params(args, config):
         param_error_log.append('Sketch size must be a positive integer')
 
     if args.margin >= 1 or args.margin < 0:
-        param_error_log.append('Edge weight filtering margin must be >= 0 and < 1')
-        param_error_log.append('Please check the configuration file')
+        param_error_log.append('Estimated similarity filtering margin must be >= 0 and < 1')
 
     if args.thread <= 0:
         param_error_log.append('No. of threads must be a positive integer')
@@ -112,17 +111,17 @@ def parse_to_user_params(args, config):
     if len(param_error_log) > 0:
         return None, param_error_log
 
-    noise_filter_thres = max(0, args.low - args.margin)
+    noise_filter_thres = round(max(0, args.low - args.margin), get_max_precision(args.low, args.margin))
 
-    return UserParams(config.res_param_start, args.low, -1 * args.step, get_precision(args.step),
+    return UserParams(config.res_param_start, args.low, -1 * args.step, get_max_precision(args.step),
                       config.precluster_thres, args.filter, args.kmer, config.default_dna_kmer_size,
                       config.default_protein_kmer_size, args.sketch, config.default_dna_sketch_size,
                       config.default_protein_sketch_size, noise_filter_thres, args.thread, args.seed), None
 
 def display_user_params(user_params):
     print('---------------------------------------------')
-    print('Resolution parameter range = [{}, {}]'.format(user_params.res_param_start, user_params.res_param_end))
-    print('Resolution parameter step size = {}'.format(user_params.res_param_step_size * -1))
+    print('Estimated similarity range = [{}, {}]'.format(user_params.res_param_start, user_params.res_param_end))
+    print('Estimated similarity step size = {}'.format(user_params.res_param_step_size * -1))
 
     if user_params.min_shared_hash_ratio is not None:
         print('Pairwise min. shared hash ratio = {}'.format(user_params.min_shared_hash_ratio))
@@ -139,6 +138,7 @@ def display_user_params(user_params):
     else:
         print('Sketch size = {}'.format(user_params.sketch_size))
 
+    print('Min. estimated similarity considered = {}'.format(user_params.noise_filter_thres))
     print('No. of threads = {}'.format(user_params.num_of_threads))
     print('---------------------------------------------')
     print()

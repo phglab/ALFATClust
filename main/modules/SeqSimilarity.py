@@ -13,6 +13,7 @@ class SeqSimilarity:
     _seed = None
     _min_shared_hash_ratio = None
     _noise_filter_thres = None
+    _max_dist = None
     _num_of_threads = None
     _p_value = None
     _is_init = False
@@ -35,7 +36,7 @@ class SeqSimilarity:
 
         cls._seed = user_params.seed
         cls._min_shared_hash_ratio = user_params.min_shared_hash_ratio
-        cls._noise_filter_thres = user_params.noise_filter_thres
+        cls._max_dist = 1 - user_params.noise_filter_thres
         cls._num_of_threads = user_params.num_of_threads
         cls._p_value = p_value
         cls._is_init = True
@@ -81,9 +82,9 @@ class SeqSimilarity:
         if not cls._is_init:
             return None
 
-        mash_command = 'mash dist -C -i -v {} -p {} {} {}'.format(cls._p_value, cls._num_of_threads,
-                                                                  seq_file_info.seq_file_path,
-                                                                  seq_file_info.seq_file_path)
+        mash_command = 'mash dist -C -i -v {} -d {} -p {} {} {}'
+        mash_command = mash_command.format(cls._p_value, cls._max_dist, cls._num_of_threads,
+                                           seq_file_info.seq_file_path, seq_file_info.seq_file_path)
 
         if seq_file_info.seq_type == AA:
             mash_command = '{} -a -k {} -s {}'.format(mash_command, cls._protein_kmer_size, cls._protein_sketch_size)
@@ -100,7 +101,5 @@ class SeqSimilarity:
                                                              seq_file_info.seq_count)
 
         os.close(fw)
-
-        global_edge_weight_mtrx[global_edge_weight_mtrx < cls._noise_filter_thres] = 0
 
         return global_edge_weight_mtrx

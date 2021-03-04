@@ -147,9 +147,14 @@ def convert_to_seq_clusters(seq_cluster_ptrs, seq_id_to_seq_name_map):
 
     return output_seq_clusters
 
-def get_precision(res_param_step_size):
-    m = re.match(r'0\.(\d*[1-9])0*', str(res_param_step_size))
-    if m:
-        return len(m.group(1))
+def get_max_precision(*vals):
+    max_precision = 2
 
-    return 2
+    for val in vals:
+        m = re.match(r'\d+\.(\d*[1-9])0*', str(val))
+        if m:
+            precision = len(m.group(1))
+            if precision > max_precision:
+                max_precision = precision
+
+    return max_precision

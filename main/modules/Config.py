@@ -1,9 +1,9 @@
 from Bio.Align import substitution_matrices
 from configparser import ConfigParser
 
-RES_PARAM_SECTION = 'ResolutionParameter'
-START_VAL = 'Start'
-END_VAL = 'End'
+EST_SIMILARITY_SECTION = 'EstimatedSimilarity'
+HIGH_VAL = 'High'
+LOW_VAL = 'Low'
 STEP_SIZE = 'StepSize'
 THRESHOLD_SECTION = 'Threshold'
 PRECLUSTER = 'Precluster'
@@ -35,9 +35,9 @@ class Config:
         config_settings = ConfigParser()
         config_settings.read(config_file_path)
 
-        self._res_param_start = float(config_settings[RES_PARAM_SECTION][START_VAL])
-        self._res_param_end = float(config_settings[RES_PARAM_SECTION][END_VAL])
-        self._res_param_step_size = float(config_settings[RES_PARAM_SECTION][STEP_SIZE])
+        self._res_param_start = float(config_settings[EST_SIMILARITY_SECTION][HIGH_VAL])
+        self._res_param_end = float(config_settings[EST_SIMILARITY_SECTION][LOW_VAL])
+        self._res_param_step_size = float(config_settings[EST_SIMILARITY_SECTION][STEP_SIZE])
 
         self._precluster_thres = int(config_settings[THRESHOLD_SECTION][PRECLUSTER])
 
