@@ -139,15 +139,19 @@ class SeqCluster:
     @staticmethod
     def _sort_src_clusters(global_edge_weight_mtrx, src_cluster_ids, src_cluster_edge_counts):
         cluster_mtrx_idxs = np.ix_(src_cluster_ids, src_cluster_ids)
-        all_sorted_edge_idxs = np.unravel_index(np.argsort(global_edge_weight_mtrx[cluster_mtrx_idxs], axis=None),
-                                                shape=(src_cluster_ids.size, src_cluster_ids.size))
-        all_sorted_edges = np.array(list(zip(all_sorted_edge_idxs[0], all_sorted_edge_idxs[1])))
+        all_sorted_edge_row_idxs, all_sorted_edge_col_idxs = \
+            np.unravel_index(np.argsort(global_edge_weight_mtrx[cluster_mtrx_idxs], axis=None),
+                             shape=(src_cluster_ids.size, src_cluster_ids.size))
+        all_sorted_edge_idxs = np.array(list(zip(all_sorted_edge_row_idxs, all_sorted_edge_col_idxs)))
 
         sorted_src_cluster_ids = list()
         proc_src_cluster_ids = set()
 
-        for src_cluster_id1, src_cluster_id2 in \
-            np.flipud(all_sorted_edges[all_sorted_edges[:, 0] < all_sorted_edges[:, 1]]):
+        for src_cluster_idx1, src_cluster_idx2 in \
+            np.flipud(all_sorted_edge_idxs[all_sorted_edge_idxs[:, 0] < all_sorted_edge_idxs[:, 1]]):
+            src_cluster_id1 = src_cluster_ids[src_cluster_idx1]
+            src_cluster_id2 = src_cluster_ids[src_cluster_idx2]
+
             if src_cluster_id1 in proc_src_cluster_ids:
                 if src_cluster_id2 in proc_src_cluster_ids:
                     continue
@@ -172,7 +176,7 @@ class SeqCluster:
                 sorted_src_cluster_ids.append(src_cluster_id2)
                 proc_src_cluster_ids.add(src_cluster_id2)
 
-        return src_cluster_ids[sorted_src_cluster_ids]
+        return sorted_src_cluster_ids
 
     @classmethod
     def _bin_src_clusters(cls, src_cluster_ids, global_edge_weight_mtrx, src_cluster_edge_counts):
