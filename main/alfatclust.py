@@ -29,7 +29,7 @@ def set_and_parse_args(config):
     parser.add_argument('-l', '--low', type=float, help=help_msg.format(config.res_param_end),
                         default=config.res_param_end)
     help_msg = 'Estimated similarity step size [{}]'
-    parser.add_argument('-u', '--step', type=float, help=help_msg.format(config.res_param_step_size),
+    parser.add_argument('-d', '--step', type=float, help=help_msg.format(config.res_param_step_size),
                         default=config.res_param_step_size)
     parser.add_argument('-f', '--filter', type=float, help='Pairwise shared hash ratio threshold for filtering')
     parser.add_argument('-p', '--precluster', action='store_true', dest='is_precluster',
