@@ -39,7 +39,7 @@ The input sequence file must be:
     The source codes of ALFATClust are under the directory "main". Simply copy the contents in the "main" folder to a local folder. Users may consider adding the path of this local folder to PATH variable. Also, make sure the following tools and libraries are properly installed and can be invoked by ALFATClust. The version tested is indicated in parentheses.
 
     - Python runtime:
-        - Python 3 (3.8.2)
+        - Python 3 (3.7.1)
 
     - Python packages:
         - numpy (1.20.1)
@@ -53,13 +53,13 @@ The input sequence file must be:
         - Mash (2.2.2)
         - MMseqs2 (12.113e3)
 
-Mash [1] can be installed using apt in Ubuntu; its source codes or binaries can also be obtained from [here](https://github.com/marbl/Mash/releases). MMseqs2 [2] is used for pre-clustering only.
+Mash [1] can be installed using apt in Ubuntu; an alternative is to download its source codes (requires compilation) or binaries from [here](https://github.com/marbl/Mash/releases). MMseqs2 [2] is used for pre-clustering only. Make sure they are included in the system path.
 
 ## Usage
 ***Command***
 - Docker:
     > alfatclust [optional arguments] -i *\<sequence file path>* -o *\<output cluster file path>*
-- Direct execution:
+- Direct execution (under the directory containing "<span>alfatclust.py</span>"):
     > ./alfatclust.py [optional arguments] -i *\<sequence file path>* -o *\<output cluster file path>*
 
 ***Mandatory arguments***
@@ -121,7 +121,7 @@ The configuration file "settings.cfg" is located under directory "/usr/local/bin
     - *Sketch*: Protein k-mer size for Mash
 
 - *NoiseFilter*
-    - *Margin*: Max. pairwise Mash distance (equal to 1 - max(*\<lower>* - *\<margin>*, 0)) allowed for clustering
+    - *Margin*: Any pairwise Mash distance *d* > 1 - max(*\<lower bound>* - *\<margin>*, 0) is regarded as noise and discarded
 
 - *DNAEvaluation* (for sequence alignment during DNA cluster evaluation)
     - *MatchScore*: Score for a nucleotide match
@@ -130,7 +130,7 @@ The configuration file "settings.cfg" is located under directory "/usr/local/bin
     - *GapExtensionPenalty*: Penalty for extending a gap
 
 - *ProteinEvaluation* (for sequence alignment during protein cluster evaluation)
-    - *ScoreMatrix*: Score matrix used for amino acid matching
+    - *ScoreMatrix*: Score matrix used for amino acid matching (refer to Biopython documentation for the built-in score matrices available)
     - *GapOpeningPenalty*: Penalty for opening a gap
     - *GapExtensionPenalty*: Penalty for extending a gap
 
