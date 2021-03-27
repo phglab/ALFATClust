@@ -26,7 +26,7 @@ The input sequence file must be:
         *\<path of dockerfile>* locates the file path of "Dockerfile". If the current path is the root directory of ALFATClust (i.e. the original parent directory of Dockerfile), just specify "." for it.<br/>
 
     **Step 2:** Once the image is built, a Docker container can be created from it:<br/>
-    > docker run -it --mount type=bind,src=*\<path of host data directory>*,dst=*\<path of contain data directory>* --name *\<container name>* *\<image name>*
+    > docker run -it --mount type=bind,src=*\<path of host data directory>*,dst=*\<path of container data directory>* --name *\<container name>* *\<image name>*
 
     A directory (specified in *\<path of host data directory>*) on the host machine can be mounted to the Docker container as *\<path of container data directory>*. A full path is recommended. Users may also name their own containers such as "alfatclust".
 
