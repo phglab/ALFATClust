@@ -3,7 +3,7 @@
 Biological sequence clustering tool with dynamic threshold for individual clusters. Suitable for clustering multiple groups of homologous sequences.
 
 ## Citation
-Chiu, J. K. H. and Ong, R. T. H. (2022). Clustering biological sequences with dynamic sequence similarity threshold. *BMC Bioinformatics* (Accepted).
+Chiu, J.K.H., Ong, R.TH. Clustering biological sequences with dynamic sequence similarity threshold. *BMC Bioinformatics* 23, 108 (2022). https://doi.org/10.1186/s12859-022-04643-9
 
 ## Sequence file requirements
 The input sequence file must be:
