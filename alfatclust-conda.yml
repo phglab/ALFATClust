@@ -1,0 +1,14 @@
+channels:
+  - conda-forge
+  - bioconda
+  - defaults
+dependencies:
+  - python=3.7.1
+  - python-igraph=0.8.3
+  - pandas=1.2.2
+  - leidenalg=0.8.3
+  - scipy=1.6.0
+  - numpy=1.20.1
+  - biopython=1.78
+  - mmseqs2=12.113e3
+  - mash=2.2.2
