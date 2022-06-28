@@ -3,7 +3,7 @@
 from collections import namedtuple
 from math import ceil
 from modules.Config import Config
-from modules.ClusterEval import ClusterEval
+from modules.ClusterEval import eval_clusters
 from modules.Precluster import Precluster
 from modules.SeqCluster import SeqCluster
 from modules.SeqSimilarity import SeqSimilarity
@@ -16,7 +16,9 @@ import pandas as pd
 import sys
 
 def set_and_parse_args(config):
-    num_of_threads = len(os.sched_getaffinity(0))
+    num_of_threads = os.cpu_count()
+    if num_of_threads is None:
+        num_of_threads = 1
 
     parser = argparse.ArgumentParser()
     parser.add_argument('-i', '--input', action='store', dest='seq_file_path', required=True,
@@ -143,7 +145,7 @@ def display_user_params(user_params):
     print('---------------------------------------------')
     print()
 
-def cluster_seqs_in_precluster(precluster_seq_records):
+def cluster_seqs_in_precluster(precluster_seq_records, is_eval_clusters=True):
     if len(precluster_seq_records) == 1:
         return [['{}{}'.format(precluster_seq_records[0].description, os.linesep)]], None, list()
 
@@ -159,13 +161,20 @@ def cluster_seqs_in_precluster(precluster_seq_records):
     sparse_edge_weight_mtrx = coo_matrix(global_edge_weight_mtrx, shape=global_edge_weight_mtrx.shape)
 
     seq_cluster_ptrs = SeqCluster.cluster_seqs(global_edge_weight_mtrx)
-    cluster_eval_output_df = \
-        ClusterEval.eval_clusters_single_thread(seq_cluster_ptrs, sparse_edge_weight_mtrx.toarray(), seq_file_info)
+
+    if is_eval_clusters:
+        cluster_eval_output_df = eval_clusters(seq_cluster_ptrs, sparse_edge_weight_mtrx.toarray(), seq_file_info,
+                                               config, num_of_threads=1)
+    else:
+        cluster_eval_output_df = None
 
     os.remove(temp_seq_file_path)
 
     return convert_to_seq_clusters(seq_cluster_ptrs, seq_file_info.seq_id_to_seq_name_map), cluster_eval_output_df, \
         list()
+
+def cluster_seqs_in_precluster_no_eval(precluster_seq_records):
+    return cluster_seqs_in_precluster(precluster_seq_records, is_eval_clusters=False)
 
 if __name__ == '__main__':
     main_dir_path = os.path.dirname(os.path.realpath(__file__))
@@ -218,8 +227,10 @@ if __name__ == '__main__':
             Precluster.create_temp_dir()
             SeqCluster.disable_verbose()
 
-            if args.cluster_eval_csv_file_path is not None:
-                ClusterEval.init(config, 1)
+            if args.cluster_eval_csv_file_path is None:
+                precluster_func = cluster_seqs_in_precluster_no_eval
+            else:
+                precluster_func = cluster_seqs_in_precluster
 
             chunk_size = min(ceil(num_of_preclusters / num_of_threads_for_main_loop), 500)
             last_max_cluster_id = 0
@@ -227,7 +238,7 @@ if __name__ == '__main__':
 
             with Pool(processes=num_of_threads_for_main_loop, maxtasksperchild=40) as pool:
                 for seq_clusters, block_cluster_eval_output_df, error_log in \
-                    pool.imap_unordered(cluster_seqs_in_precluster, precluster_to_seq_recs_map.values(), chunk_size):
+                    pool.imap_unordered(precluster_func, precluster_to_seq_recs_map.values(), chunk_size):
                     output_seq_clusters += seq_clusters
                     overall_error_log += error_log
 
@@ -254,9 +265,8 @@ if __name__ == '__main__':
 
             if args.cluster_eval_csv_file_path is not None:
                 print('Evaluating sequence clusters...')
-                ClusterEval.init(config, user_params.num_of_threads)
-                cluster_eval_output_df = \
-                    ClusterEval.eval_clusters(seq_cluster_ptrs, sparse_edge_weight_mtrx.toarray(), seq_file_info)
+                cluster_eval_output_df = eval_clusters(seq_cluster_ptrs, sparse_edge_weight_mtrx.toarray(),
+                                                       seq_file_info, config, user_params.num_of_threads)
 
         with open(args.seq_cluster_file_path, 'w') as f_out:
             cluster_count = 0
