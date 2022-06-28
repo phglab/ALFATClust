@@ -5,15 +5,21 @@ Biological sequence clustering tool with dynamic threshold for individual cluste
 ## Citation
 Chiu, J.K.H., Ong, R.TH. Clustering biological sequences with dynamic sequence similarity threshold. *BMC Bioinformatics* 23, 108 (2022). https://doi.org/10.1186/s12859-022-04643-9
 
+## Release update
+- 2022-06-28:<br/>
+    - Replaced a Python library function that is not supported by Mac OS.
+    - Updated the sequence cluster evaluation module to fix the runtime error that is raised during direct execution in host machine.
+    - Added the conda environment file.
+
 ## Sequence file requirements
 The input sequence file must be:
 1. Consisting of either DNA or protein sequences
 2. In FASTA format
 
 ## Installation
-- **Docker**<br/>
-    ALFATClust is available as a Docker package, from which a Docker image can be built and then use it to create a Docker container as a virtual environment.<br/><br/>
-    **Step 1:**  The Docker image can be built via either the repository URL or the local directory:<br/>
+- **Method 1: Docker**<br/>
+    ALFATClust is available as a Docker package, from which a Docker image can be built and then use it to create a Docker container as a virtual environment. Details of Docker and its installation can be found [here](https://www.docker.com/).<br/><br/>
+    **Step 1:** The Docker image can be built via either the repository URL or the local directory:<br/>
     - **Option 1: Build with repository URL**<br/>
         The following command builds a Docker image managed by the host Docker engine:
         > docker build -t *\<image name>* github<span>.com/phglab/ALFATClust</span><br/>
@@ -28,14 +34,38 @@ The input sequence file must be:
     **Step 2:** Once the image is built, a Docker container can be created from it:<br/>
     > docker run -it --mount type=bind,src=*\<path of host data directory>*,dst=*\<path of container data directory>* --name *\<container name>* *\<image name>*
 
-    A directory (specified in *\<path of host data directory>*) on the host machine can be mounted to the Docker container as *\<path of container data directory>*. A full path is recommended. Users may also name their own containers such as "alfatclust".
+    A directory (specified in *\<path of host data directory>*) on the host machine can be mounted to the Docker container as *\<path of container data directory>*. An absolute (full) path is recommended. Users may also name their own containers such as "alfatclust". *\<image name>* is the Docker image named in step 1.
 
     Refer to [here](https://docs.docker.com/engine/reference/commandline/service_create/#add-bind-mounts-volumes-or-memory-filesystems) for more mounting options.
 
     **Step 3:** To start an existing container:
     > docker start -ai *\<container name>*
 
-- **Direct execution in host**<br/>
+    *\<container name>* is the Docker container named in step 2.
+
+    **Step 4:** To exit the container, run the following command in the terminal running it:
+    > exit
+
+- **Method 2: conda**<br/>
+    Machines having [Miniconda](https://docs.conda.io/en/latest/miniconda.html) or [Anaconda](https://www.anaconda.com/) installed can set up a conda environment to run ALFATClust.<br/>
+
+    **Step 1:** Update conda to the latest version, e.g. for Miniconda it can be updated via terminal:
+    > conda update conda
+
+    **Step 2:** Create a new conda environment for ALFATClust execution using the environment file "alfatclust-conda.yml":
+    > conda env create -n *\<environment name>* --file *\<path of alfatclust-conda.yml>*
+
+    The conda environment created will be named as *\<environment name>*. Users may name their own environments such as "alfatclust_env". *\<alfatclust-conda.yml>* is located under the root directory of ALFATClust.
+
+    **Step 3:** Activate the created conda environment by:
+    > conda activate *\<environment name>*
+
+    *\<environment name>* is the environment named in step 2.
+
+    **Step 4:** To deactivate (exit) the conda environment, run the following command:
+    > conda deactivate
+
+- **Method 3: Direct execution in host**<br/>
     The source codes of ALFATClust are under the directory "main". Simply copy the contents in the "main" folder to a local folder. Users may consider adding the path of this local folder to PATH variable. Also, make sure the following tools and libraries are properly installed and can be invoked by ALFATClust. The version tested is indicated in parentheses.
 
     - Python runtime:
@@ -59,21 +89,26 @@ Mash [1] can be installed using apt in Ubuntu; an alternative is to download its
 ***Command***
 - Docker:
     > alfatclust [optional arguments] -i *\<sequence file path>* -o *\<output cluster file path>*
-- Direct execution (under the directory containing "<span>alfatclust.py</span>"):
+
+    Note: Both full and relative file paths are accepted.
+
+- conda/Direct execution (assuming the current working directory is the root directory of ALFATClust):
     > ./alfatclust.py [optional arguments] -i *\<sequence file path>* -o *\<output cluster file path>*
+
+    Note: When the current working directory is somewhere else, locate "alfatclust.py" using a (full/relative) path instead.
 
 ***Mandatory arguments***
 
-| Argument name                             | Description                                |
-| ----------------------------------------- | ------------------------------------------ |
-| -i/--input *\<sequence file path>*        | input DNA/protein sequence FASTA file path |
-| -o/--output *\<output cluster file path>* | output sequence cluster file path          |
+| Argument name                             | Description                                                |
+| ----------------------------------------- | ---------------------------------------------------------- |
+| -i/--input *\<sequence file path>*        | (full/relative) input DNA/protein sequence FASTA file path |
+| -o/--output *\<output cluster file path>* | (full/relative) output sequence cluster file path          |
 
 ***Optional arguments***
 
 | Argument name                             | Description [default value]                                                                               |
 | ----------------------------------------- | --------------------------------------------------------------------------------------------------------- |
-| -e/--evaluate *\<cluster eval file path>* | evaluate the clusters and export the evaluation results to *\<cluster eval file path>*                    |
+| -e/--evaluate *\<cluster eval file path>* | evaluate the clusters and export the evaluation results to (full/relative) *\<cluster eval file path>*    |
 | -l/--lower *\<lower>*                     | set the lower bound of the sequence distance estimate (resolution parameter) to *\<lower>* [0.75]         |
 | -d/--step *\<step>*                       | set the step size of the sequence distance estimate range to *\<step>* [0.025]                            |
 | -p/--precluster                           | always run pre-clustering                                                                                 |
