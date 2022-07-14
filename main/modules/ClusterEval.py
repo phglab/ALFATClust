@@ -142,7 +142,7 @@ def _cal_seq_ident(seq_rec_pair_to_align):
     check_count = 0
 
     for seq_align in seq_aligner.align(short_seq, long_seq):
-        seq_align_pattern = format(seq_align, 'fasta').split(os.linesep)[1]
+        seq_align_pattern = format(seq_align).split(os.linesep)[1]
         seq_ident = seq_align_pattern.count('|') / len(seq_align_pattern.strip('-'))
 
         if seq_ident > max_seq_ident:
