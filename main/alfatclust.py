@@ -157,21 +157,26 @@ def cluster_seqs_in_precluster(precluster_seq_records, is_eval_clusters=True):
 
         return list(), None, seq_file_info.error_log
 
-    global_edge_weight_mtrx = SeqSimilarity.get_pairwise_similarity(seq_file_info)
-    sparse_edge_weight_mtrx = coo_matrix(global_edge_weight_mtrx, shape=global_edge_weight_mtrx.shape)
+    global_edge_weight_mtrx, mash_error_msg = SeqSimilarity.get_pairwise_similarity(seq_file_info)
+    if mash_error_msg is None:
+        sparse_edge_weight_mtrx = coo_matrix(global_edge_weight_mtrx, shape=global_edge_weight_mtrx.shape)
 
-    seq_cluster_ptrs = SeqCluster.cluster_seqs(global_edge_weight_mtrx)
+        seq_cluster_ptrs = SeqCluster.cluster_seqs(global_edge_weight_mtrx)
 
-    if is_eval_clusters:
-        cluster_eval_output_df = eval_clusters(seq_cluster_ptrs, sparse_edge_weight_mtrx.toarray(), seq_file_info,
-                                               config, num_of_threads=1)
+        if is_eval_clusters:
+            cluster_eval_output_df = eval_clusters(seq_cluster_ptrs, sparse_edge_weight_mtrx.toarray(), seq_file_info,
+                                                   config, num_of_threads=1)
+        else:
+            cluster_eval_output_df = None
+
+        os.remove(temp_seq_file_path)
+
+        return convert_to_seq_clusters(seq_cluster_ptrs, seq_file_info.seq_id_to_seq_name_map), \
+            cluster_eval_output_df, list()
     else:
-        cluster_eval_output_df = None
+        os.remove(temp_seq_file_path)
 
-    os.remove(temp_seq_file_path)
-
-    return convert_to_seq_clusters(seq_cluster_ptrs, seq_file_info.seq_id_to_seq_name_map), cluster_eval_output_df, \
-        list()
+        return list(), None, [mash_error_msg]
 
 def cluster_seqs_in_precluster_no_eval(precluster_seq_records):
     return cluster_seqs_in_precluster(precluster_seq_records, is_eval_clusters=False)
@@ -253,9 +258,14 @@ if __name__ == '__main__':
                     last_max_cluster_id = len(output_seq_clusters)
                     process_count += 1
                     print('{} / {} subsets processed'.format(process_count, num_of_preclusters), end='\r')
+
+            if len(overall_error_log) > 0:
+                raise RecursionError(os.linesep.join(overall_error_log))
         else:
             print('Estimating pairwise sequence distances...')
-            global_edge_weight_mtrx = SeqSimilarity.get_pairwise_similarity(seq_file_info)
+            global_edge_weight_mtrx, mash_error_msg = SeqSimilarity.get_pairwise_similarity(seq_file_info)
+            if mash_error_msg is not None:
+                raise RuntimeError(mash_error_msg)
 
             if args.cluster_eval_csv_file_path is not None:
                 sparse_edge_weight_mtrx = coo_matrix(global_edge_weight_mtrx, shape=global_edge_weight_mtrx.shape)
@@ -287,6 +297,9 @@ if __name__ == '__main__':
     except SystemExit as sys_exit:
         if sys_exit.code != 0:
             print(sys_exit.code)
+    except RuntimeError as err:
+        print()
+        print('Process aborted due to error occurred: {}{}'.format(os.linesep, str(err)))
     except:
         print()
         print('Process aborted due to error occurred: {}'.format(sys.exc_info()[1]))

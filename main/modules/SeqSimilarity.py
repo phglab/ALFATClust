@@ -1,4 +1,4 @@
-from .Constants import AA
+from .Constants import AA, MASH_OUTPUT_PATTERN
 import numpy as np
 import os
 import re
@@ -49,15 +49,30 @@ class SeqSimilarity:
     def _parse_mash_output(cls, fid, mash_seq_name_to_seq_id_map, seq_count):
         max_seq_id = seq_count - 1
         global_edge_weight_mtrx = np.zeros((seq_count, seq_count), dtype=np.float32)
+        mash_error_msg = None
 
         with os.fdopen(fid) as f:
             while True:
-                line = f.readline()
-                line_fields = line.rstrip().split('\t')
-                seq_name1 = line_fields[0]
-                seq_name2 = line_fields[1]
-                seq_id1 = mash_seq_name_to_seq_id_map[seq_name1]
-                seq_id2 = mash_seq_name_to_seq_id_map[seq_name2]
+                mash_output = f.readline().rstrip()
+                m = re.match(MASH_OUTPUT_PATTERN, mash_output)
+                if not m:
+                    mash_error_msg = 'Error occurred in Mash as follows:{}{}'.format(os.linesep, mash_output)
+                    break
+
+                seq_name1 = m.group(1)
+                seq_name2 = m.group(2)
+
+                if seq_name1 in mash_seq_name_to_seq_id_map:
+                    seq_id1 = mash_seq_name_to_seq_id_map[seq_name1]
+                else:
+                    mash_error_msg = 'Failed to match \'{}\' from Mash'.format(seq_name1)
+                    break
+
+                if seq_name2 in mash_seq_name_to_seq_id_map:
+                    seq_id2 = mash_seq_name_to_seq_id_map[seq_name2]
+                else:
+                    mash_error_msg = 'Failed to match \'{}\' from Mash'.format(seq_name2)
+                    break
 
                 if seq_id1 == max_seq_id and seq_id2 == max_seq_id:
                     break
@@ -66,16 +81,12 @@ class SeqSimilarity:
                     continue
 
                 if cls._min_shared_hash_ratio is not None:
-                    m = re.match(r'(\d+)/(\d+)', line_fields[4])
-                    if m:
-                        if int(m.group(1)) / int(m.group(2)) < cls._min_shared_hash_ratio:
-                            continue
-                    else:
+                    if int(m.group(9)) / int(m.group(10)) < cls._min_shared_hash_ratio:
                         continue
 
-                global_edge_weight_mtrx[seq_id1, seq_id2] = 1 - float(line_fields[2])
+                global_edge_weight_mtrx[seq_id1, seq_id2] = 1 - float(m.group(3))
 
-        return global_edge_weight_mtrx
+        return global_edge_weight_mtrx, mash_error_msg
 
     @classmethod
     def get_pairwise_similarity(cls, seq_file_info):
@@ -97,9 +108,9 @@ class SeqSimilarity:
         fr, fw = os.pipe()
 
         with subprocess.Popen(args=shlex.split(mash_command), stdout=fw, stderr=subprocess.DEVNULL) as p:
-            global_edge_weight_mtrx = cls._parse_mash_output(fr, seq_file_info.mash_seq_name_to_seq_id_map,
-                                                             seq_file_info.seq_count)
+            global_edge_weight_mtrx, mash_error_msg = \
+                cls._parse_mash_output(fr, seq_file_info.mash_seq_name_to_seq_id_map, seq_file_info.seq_count)
 
         os.close(fw)
 
-        return global_edge_weight_mtrx
+        return global_edge_weight_mtrx, mash_error_msg

@@ -7,4 +7,5 @@ IUPAC_AMBIG_DNA_BASES = r'[RYSWKMBDHVN]'
 IUPAC_AMBIG_AA_BASES = r'[BXZ]'
 
 FASTA_SEQ_NAME_WITH_COMMENT_PATTERN = r'^(\S*)\s?(.*)$'
+MASH_OUTPUT_PATTERN = r'^(.+)\s+(.+)\s+(\d+(\.\d+(e\-\d+)?)?)\s+(\d+(\.\d+(e\-\d+)?)?)\s+(\d+)\/(\d+)$'
 MASH_COMMENT_FIELD_SEP = ':'
