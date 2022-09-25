@@ -6,6 +6,8 @@ Biological sequence clustering tool with dynamic threshold for individual cluste
 Chiu, J.K.H., Ong, R.TH. Clustering biological sequences with dynamic sequence similarity threshold. *BMC Bioinformatics* 23, 108 (2022). https://doi.org/10.1186/s12859-022-04643-9
 
 ## Release update
+- 2022-09-26:<br/>
+    - Added error handling for sequence distance estimation process.
 - 2022-06-28:<br/>
     - Replaced a Python library function that is not supported by Mac OS.
     - Updated the sequence cluster evaluation module to fix the runtime error that is raised during direct execution in host machine.
