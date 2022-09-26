@@ -1,4 +1,4 @@
-from .Constants import AA, MASH_OUTPUT_PATTERN
+from .Constants import AA, MASH_SKETCH_MSG_PATTERN, MASH_OUTPUT_PATTERN
 import numpy as np
 import os
 import re
@@ -56,6 +56,9 @@ class SeqSimilarity:
                 mash_output = f.readline().rstrip()
                 m = re.match(MASH_OUTPUT_PATTERN, mash_output)
                 if not m:
+                    if re.match(MASH_SKETCH_MSG_PATTERN, mash_output):
+                        continue
+
                     mash_error_msg = 'Error occurred in Mash as follows:{}{}'.format(os.linesep, mash_output)
                     break
 
@@ -107,7 +110,7 @@ class SeqSimilarity:
 
         fr, fw = os.pipe()
 
-        with subprocess.Popen(args=shlex.split(mash_command), stdout=fw, stderr=subprocess.DEVNULL) as p:
+        with subprocess.Popen(args=shlex.split(mash_command), stdout=fw, stderr=fw) as p:
             global_edge_weight_mtrx, mash_error_msg = \
                 cls._parse_mash_output(fr, seq_file_info.mash_seq_name_to_seq_id_map, seq_file_info.seq_count)
 
