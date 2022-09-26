@@ -12,7 +12,6 @@ class SeqSimilarity:
     _protein_sketch_size = None
     _seed = None
     _min_shared_hash_ratio = None
-    _noise_filter_thres = None
     _max_dist = None
     _num_of_threads = None
     _p_value = None
