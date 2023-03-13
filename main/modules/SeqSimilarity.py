@@ -1,4 +1,4 @@
-from .Constants import AA, MASH_SKETCH_MSG_PATTERN, MASH_OUTPUT_PATTERN
+from .Constants import AA, DNA, MASH_SKETCH_MSG_PATTERN, MASH_OUTPUT_PATTERN
 import numpy as np
 import os
 import re
@@ -36,6 +36,7 @@ class SeqSimilarity:
         cls._seed = user_params.seed
         cls._min_shared_hash_ratio = user_params.min_shared_hash_ratio
         cls._max_dist = 1 - user_params.noise_filter_thres
+        cls._is_no_reverse = user_params.is_no_reverse
         cls._num_of_threads = user_params.num_of_threads
         cls._p_value = p_value
         cls._is_init = True
@@ -103,6 +104,9 @@ class SeqSimilarity:
             mash_command = '{} -a -k {} -s {}'.format(mash_command, cls._protein_kmer_size, cls._protein_sketch_size)
         else:
             mash_command = '{} -k {} -s {}'.format(mash_command, cls._dna_kmer_size, cls._dna_sketch_size)
+
+        if cls._is_no_reverse and seq_file_info.seq_type == DNA:
+            mash_command = f'{mash_command} -n'
 
         if cls._seed is not None:
             mash_command = '{} -S {}'.format(mash_command, cls._seed)

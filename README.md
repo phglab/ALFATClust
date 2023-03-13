@@ -6,6 +6,8 @@ Biological sequence clustering tool with dynamic threshold for individual cluste
 Chiu, J.K.H., Ong, R.TH. Clustering biological sequences with dynamic sequence similarity threshold. *BMC Bioinformatics* 23, 108 (2022). https://doi.org/10.1186/s12859-022-04643-9
 
 ## Release update
+- 2023-03-14:<br/>
+    - Added `-n` option to disable reverse complement for DNA sequences when estimating their pairwise distances.
 - 2022-11-05:<br/>
     - Added an utility to convert RNA sequences to DNA sequences for clustering.
 - 2022-10-14:<br/>
@@ -105,26 +107,27 @@ Mash [1] can be installed using apt in Ubuntu; an alternative is to download its
 
 ***Mandatory arguments***
 
-| Argument name                             | Description                                                |
-| ----------------------------------------- | ---------------------------------------------------------- |
-| -i/--input *\<sequence file path>*        | (full/relative) input DNA/protein sequence FASTA file path |
-| -o/--output *\<output cluster file path>* | (full/relative) output sequence cluster file path          |
+| Argument name                               | Description                                                |
+| ------------------------------------------- | ---------------------------------------------------------- |
+| `-i/--input` *\<sequence file path>*        | (full/relative) input DNA/protein sequence FASTA file path |
+| `-o/--output` *\<output cluster file path>* | (full/relative) output sequence cluster file path          |
 
 ***Optional arguments***
 
-| Argument name                             | Description [default value]                                                                               |
-| ----------------------------------------- | --------------------------------------------------------------------------------------------------------- |
-| -e/--evaluate *\<cluster eval file path>* | evaluate the clusters and export the evaluation results to (full/relative) *\<cluster eval file path>*    |
-| -l/--lower *\<lower>*                     | set the lower bound of the sequence distance estimate (resolution parameter) to *\<lower>* [0.75]         |
-| -d/--step *\<step>*                       | set the step size of the sequence distance estimate range to *\<step>* [0.025]                            |
-| -p/--precluster                           | always run pre-clustering                                                                                 |
-| -k/--kmer *\<kmer>*                       | set the Mash kmer size parameter to *\<kmer>* [DNA: 17; protein: 9]                                       |
-| -s/--sketch *\<sketch>*                   | set the Mash sketch size parameter to *\<sketch>* [2000]                                                  |
-| -m/--margin *\<margin>*                   | ignore any Mash distance above 1 - max(*\<lower>* - *\<margin>*, 0) [0.2]                                 |
-| -f/--filter *\<filter>*                   | discard a Mash distance when its shared hash ratio is below *\<filter>*, NOT recommended                  |
-| -t/--thread *\<thread>*                   | set the number of threads to *\<thread>* (for Mash and cluster evaluation only) [all available CPU cores] |
-| -S/--seed *\<seed>*                       | set the seed value to *\<seed>*                                                                           |
-| -h/--help                                 | show help message and exit                                                                                |
+| Argument name                               | Description [default value]                                                                               |
+| ------------------------------------------- | --------------------------------------------------------------------------------------------------------- |
+| `-e/--evaluate` *\<cluster eval file path>* | evaluate the clusters and export the evaluation results to (full/relative) *\<cluster eval file path>*    |
+| `-l/--lower` *\<lower>*                     | set the lower bound of the sequence distance estimate (resolution parameter) to *\<lower>* [0.75]         |
+| `-d/--step` *\<step>*                       | set the step size of the sequence distance estimate range to *\<step>* [0.025]                            |
+| `-p/--precluster`                           | always run pre-clustering                                                                                 |
+| `-k/--kmer` *\<kmer>*                       | set the Mash kmer size parameter to *\<kmer>* [DNA: 17; protein: 9]                                       |
+| `-s/--sketch` *\<sketch>*                   | set the Mash sketch size parameter to *\<sketch>* [2000]                                                  |
+| `-m/--margin` *\<margin>*                   | ignore any Mash distance above 1 - max(*\<lower>* - *\<margin>*, 0) [0.2]                                 |
+| `-f/--filter` *\<filter>*                   | discard a Mash distance when its shared hash ratio is below *\<filter>*, NOT recommended                  |
+| `-n/--no-reverse`                           | disable reverse complement for DNA sequences during Mash distance estimation                              |
+| `-t/--thread` *\<thread>*                   | set the number of threads to *\<thread>* (for Mash and cluster evaluation only) [all available CPU cores] |
+| `-S/--seed` *\<seed>*                       | set the seed value to *\<seed>*                                                                           |
+| `-h/--help`                                 | show help message and exit                                                                                |
 
 ***Evaluation report***
 

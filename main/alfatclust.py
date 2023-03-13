@@ -41,6 +41,8 @@ def set_and_parse_args(config):
     help_msg = 'Discard estimated similarity values below (lower bound of estimated similarity - margin [{}])'
     parser.add_argument('-m', '--margin', type=float, help=help_msg.format(config.noise_filter_margin),
                         default=config.noise_filter_margin)
+    parser.add_argument('-n', '--no-reverse', action='store_true', dest='is_no_reverse',
+                        help='Disable reverse complement for DNA sequences during Mash distance estimation')
     help_msg = 'No. of threads to be used [{}]'
     parser.add_argument('-t', '--thread', type=int, help=help_msg.format(num_of_threads), default=num_of_threads)
     parser.add_argument('-S', '--seed', type=int, help='Seed value')
@@ -54,7 +56,7 @@ def parse_to_user_params(args, config):
                                            'precluster_thres', 'min_shared_hash_ratio', 'kmer_size',
                                            'default_dna_kmer_size', 'default_protein_kmer_size', 'sketch_size',
                                            'default_dna_sketch_size', 'default_protein_sketch_size',
-                                           'noise_filter_thres', 'num_of_threads', 'seed'])
+                                           'noise_filter_thres', 'is_no_reverse', 'num_of_threads', 'seed'])
 
     if not os.path.isfile(args.seq_file_path):
         param_error_log.append('Sequence file \'{}\' does not exist'.format(args.seq_file_path))
@@ -118,7 +120,8 @@ def parse_to_user_params(args, config):
     return UserParams(config.res_param_start, args.low, -1 * args.step, get_max_precision(args.step),
                       config.precluster_thres, args.filter, args.kmer, config.default_dna_kmer_size,
                       config.default_protein_kmer_size, args.sketch, config.default_dna_sketch_size,
-                      config.default_protein_sketch_size, noise_filter_thres, args.thread, args.seed), None
+                      config.default_protein_sketch_size, noise_filter_thres, args.is_no_reverse,
+                      args.thread, args.seed), None
 
 def display_user_params(user_params):
     print('---------------------------------------------')
@@ -141,6 +144,7 @@ def display_user_params(user_params):
         print('Sketch size = {}'.format(user_params.sketch_size))
 
     print('Min. estimated similarity considered = {}'.format(user_params.noise_filter_thres))
+    print(f'Disable reverse complement for DNA = {user_params.is_no_reverse}')
     print('No. of threads = {}'.format(user_params.num_of_threads))
     print('---------------------------------------------')
     print()
