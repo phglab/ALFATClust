@@ -20,7 +20,10 @@ def check_seq_type(seq_str):
     return None
 
 def _convert_to_mash_seq_name(seq_name):
-    m = re.match(FASTA_SEQ_NAME_WITH_COMMENT_PATTERN, seq_name)
+    if re.search(INVALID_FASTA_SEQ_HDR_STR_PATTERN, seq_name):
+        return None
+
+    m = re.match(FASTA_SEQ_HDR_WITH_COMMENT_PATTERN, seq_name)
     if m:
         return '{}{}{}'.format(m.group(1), MASH_COMMENT_FIELD_SEP, m.group(2))
     else:
@@ -56,6 +59,7 @@ def read_seq_file(seq_file_path, user_params=None):
     with open(seq_file_path, 'r') as f:
         unknown_seq_type_msg = '\'{}\': Cannot determine whether it is DNA or protein sequence'
         short_seq_len_msg = '\'{}\': Sequence length shorter than the required k-mer size [{}]'
+        invalid_seq_hdr_msg = '\'{}\': Sequence header consisting of more than one whitespace separator'
 
         for seq_record in SeqIO.parse(f, 'fasta'):
             last_seq_name = seq_record.description
@@ -82,6 +86,9 @@ def read_seq_file(seq_file_path, user_params=None):
                 max_seq_len = seq_len
 
             mash_last_seq_name = _convert_to_mash_seq_name(last_seq_name)
+            if mash_last_seq_name is None:
+                seq_error_log.append(invalid_seq_hdr_msg.format(seq_record.description))
+
             mash_seq_name_to_seq_id_map[mash_last_seq_name] = seq_count
             seq_id_to_seq_name_map[str(seq_count)] = last_seq_name
             seq_count += 1
