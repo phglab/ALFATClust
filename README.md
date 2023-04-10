@@ -36,7 +36,7 @@ A pre-processing workflow consisting of the following three utilities is provide
 1. Sequence filtering (_filter_seqs.py_):<br/>
 Scan the input sequence file to identify and filter sequences for the following issues:<br/><br/>
     a. Unidentifiable amino acids/DNA bases (e.g. U as an amino acid or X as a DNA base)<br/>
-    b. Less than 95% of the amino acids/DNA bases are unambiguous (e.g. )<br/>
+    b. Less than 95% of the amino acids/DNA bases are unambiguous (e.g. R or N for DNA)<br/>
     c. Sequence length less than the Mash k-mer size used
     
 2. Sequence header whitespace replacement (_replace_seq_header_spaces.py):<br/>
