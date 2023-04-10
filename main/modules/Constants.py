@@ -1,13 +1,14 @@
 DNA = 1
 AA = 2
 
+SEQ_QUAL_THRES = 0.95
+
 IUPAC_DNA_STR_PATTERN = r'^[ACGTRYSWKMBDHVN]+$'
 IUPAC_AA_STR_PATTERN = r'^[ABCDEFGHIKLMNPQRSTVWXYZ]+$'
 IUPAC_AMBIG_DNA_BASES = r'[RYSWKMBDHVN]'
 IUPAC_AMBIG_AA_BASES = r'[BXZ]'
 
-FASTA_SEQ_HDR_WITH_COMMENT_PATTERN = r'^(\S*)\s?(.*)$'
-INVALID_FASTA_SEQ_HDR_STR_PATTERN = r'\s+\S+\s+'
+FASTA_SEQ_HDR_PATTERN = r'^(\S+)(\s(\S+))?$'
 MASH_SKETCH_MSG_PATTERN = r'^Sketching .+ \(provide sketch file made with "mash sketch" to skip\).+$'
 MASH_OUTPUT_PATTERN = r'^(.+)\s+(.+)\s+(\d+(\.\d+)?(e\-\d+)?)\s+(\d+(\.\d+)?(e\-\d+)?)\s+(\d+)\/(\d+)$'
 MASH_COMMENT_FIELD_SEP = ':'

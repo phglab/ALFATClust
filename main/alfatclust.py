@@ -3,6 +3,7 @@
 from collections import namedtuple
 from math import ceil
 from modules.Config import Config
+from modules.Constants import AA, DNA
 from modules.ClusterEval import eval_clusters
 from modules.Precluster import Precluster
 from modules.SeqCluster import SeqCluster
@@ -27,6 +28,9 @@ def set_and_parse_args(config):
                         help='Output cluster file path')
     parser.add_argument('-e', '--evaluate', action='store', dest='cluster_eval_csv_file_path',
                         help='Sequence cluster evaluation output CSV file path')
+    parser.add_argument('-b', '--target', action='store', dest='target_seq_type',
+                        help='Specify the sequence type (dna|aa) for input dataset or let the system decides [auto]',
+                        choices=['aa', 'dna', 'auto'], default='auto')
     help_msg = 'Lower bound for estimated similarity range [{}]'
     parser.add_argument('-l', '--low', type=float, help=help_msg.format(config.res_param_end),
                         default=config.res_param_end)
@@ -52,8 +56,8 @@ def set_and_parse_args(config):
 def parse_to_user_params(args, config):
     param_error_log = list()
 
-    UserParams = namedtuple('UserParams', ['res_param_start', 'res_param_end', 'res_param_step_size', 'precision',
-                                           'precluster_thres', 'min_shared_hash_ratio', 'kmer_size',
+    UserParams = namedtuple('UserParams', ['target_seq_type', 'res_param_start', 'res_param_end', 'res_param_step_size',
+                                           'precision', 'precluster_thres', 'min_shared_hash_ratio', 'kmer_size',
                                            'default_dna_kmer_size', 'default_protein_kmer_size', 'sketch_size',
                                            'default_dna_sketch_size', 'default_protein_sketch_size',
                                            'noise_filter_thres', 'is_no_reverse', 'num_of_threads', 'seed'])
@@ -117,11 +121,11 @@ def parse_to_user_params(args, config):
 
     noise_filter_thres = round(max(0, args.low - args.margin), get_max_precision(args.low, args.margin))
 
-    return UserParams(config.res_param_start, args.low, -1 * args.step, get_max_precision(args.step),
-                      config.precluster_thres, args.filter, args.kmer, config.default_dna_kmer_size,
-                      config.default_protein_kmer_size, args.sketch, config.default_dna_sketch_size,
-                      config.default_protein_sketch_size, noise_filter_thres, args.is_no_reverse,
-                      args.thread, args.seed), None
+    return UserParams(args.target_seq_type, config.res_param_start, args.low, -1 * args.step,
+                      get_max_precision(args.step), config.precluster_thres, args.filter, args.kmer,
+                      config.default_dna_kmer_size, config.default_protein_kmer_size, args.sketch,
+                      config.default_dna_sketch_size, config.default_protein_sketch_size, noise_filter_thres,
+                      args.is_no_reverse, args.thread, args.seed), None
 
 def display_user_params(user_params):
     print('---------------------------------------------')
@@ -149,12 +153,12 @@ def display_user_params(user_params):
     print('---------------------------------------------')
     print()
 
-def cluster_seqs_in_precluster(precluster_seq_records, is_eval_clusters=True):
+def cluster_seqs_in_precluster(precluster_seq_records, precluster_seq_type, is_eval_clusters=True):
     if len(precluster_seq_records) == 1:
         return [['{}{}'.format(precluster_seq_records[0].description, os.linesep)]], None, list()
 
     temp_seq_file_path = Precluster.write_precluster_seq_records(precluster_seq_records)
-    seq_file_info = read_seq_file(temp_seq_file_path)
+    seq_file_info = read_seq_file(temp_seq_file_path, None, precluster_seq_type)
 
     if len(seq_file_info.error_log) > 0:
         os.remove(temp_seq_file_path)
@@ -182,8 +186,17 @@ def cluster_seqs_in_precluster(precluster_seq_records, is_eval_clusters=True):
 
         return list(), None, [mash_error_msg]
 
-def cluster_seqs_in_precluster_no_eval(precluster_seq_records):
-    return cluster_seqs_in_precluster(precluster_seq_records, is_eval_clusters=False)
+def cluster_protein_seqs_in_precluster(precluster_seq_records):
+    return cluster_seqs_in_precluster(precluster_seq_records, precluster_seq_type=AA)
+
+def cluster_protein_seqs_in_precluster_no_eval(precluster_seq_records):
+    return cluster_seqs_in_precluster(precluster_seq_records, precluster_seq_type=AA, is_eval_clusters=False)
+
+def cluster_dna_seqs_in_precluster(precluster_seq_records):
+    return cluster_seqs_in_precluster(precluster_seq_records, precluster_seq_type=DNA)
+
+def cluster_dna_seqs_in_precluster_no_eval(precluster_seq_records):
+    return cluster_seqs_in_precluster(precluster_seq_records, precluster_seq_type=DNA, is_eval_clusters=False)
 
 if __name__ == '__main__':
     main_dir_path = os.path.dirname(os.path.realpath(__file__))
@@ -237,9 +250,15 @@ if __name__ == '__main__':
             SeqCluster.disable_verbose()
 
             if args.cluster_eval_csv_file_path is None:
-                precluster_func = cluster_seqs_in_precluster_no_eval
+                if seq_file_info.seq_type == AA:
+                    precluster_func = cluster_protein_seqs_in_precluster_no_eval
+                elif seq_file_info.seq_type == DNA:
+                    precluster_func = cluster_dna_seqs_in_precluster_no_eval
             else:
-                precluster_func = cluster_seqs_in_precluster
+                if seq_file_info.seq_type == AA:
+                    precluster_func = cluster_protein_seqs_in_precluster
+                elif seq_file_info.seq_type == DNA:
+                    precluster_func = cluster_dna_seqs_in_precluster
 
             chunk_size = min(ceil(num_of_preclusters / num_of_threads_for_main_loop), 500)
             last_max_cluster_id = 0
