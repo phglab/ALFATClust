@@ -39,7 +39,7 @@ Scan the input sequence file to identify and filter sequences for the following 
     b. Less than 95% of the amino acids/DNA bases are unambiguous (e.g. R or N for DNA)<br/>
     c. Sequence length less than the Mash k-mer size used
     
-2. Sequence header whitespace replacement (_replace_seq_header_spaces.py):<br/>
+2. Sequence header whitespace replacement (_replace_seq_header_spaces.py_):<br/>
 Replace every whitespace in the FASTA sequence header by an underscore (_) character
 
 3. RNA to DNA conversion (_rna_to_dna.py_):<br/>
