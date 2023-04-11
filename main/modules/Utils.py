@@ -63,7 +63,7 @@ def match_seq_type(seq_str, target_seq_type=None):
     if target_seq_type == AA:
         if re.match(IUPAC_AA_STR_PATTERN, seq_str):
             unambig_protein_seq_str = re.sub(IUPAC_AMBIG_AA_BASES, '', seq_str)
-            if len(unambig_protein_seq_str) / len(seq_str) >= 0.95:
+            if len(unambig_protein_seq_str) / len(seq_str) >= SEQ_QUAL_THRES:
                 return SEQ_TYPE_MATCH
             else:
                 return SEQ_TYPE_LOW_QUAL
@@ -72,7 +72,7 @@ def match_seq_type(seq_str, target_seq_type=None):
     elif target_seq_type == DNA:        
         if re.match(IUPAC_DNA_STR_PATTERN, seq_str):
             unambig_dna_seq_str = re.sub(IUPAC_AMBIG_DNA_BASES, '', seq_str)
-            if len(unambig_dna_seq_str) / len(seq_str) >= 0.95:
+            if len(unambig_dna_seq_str) / len(seq_str) >= SEQ_QUAL_THRES:
                 return SEQ_TYPE_MATCH
             else:
                 return SEQ_TYPE_LOW_QUAL
