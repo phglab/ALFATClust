@@ -6,6 +6,8 @@ Biological sequence clustering tool with dynamic threshold for individual cluste
 Chiu, J.K.H., Ong, R.TH. Clustering biological sequences with dynamic sequence similarity threshold. *BMC Bioinformatics* 23, 108 (2022). https://doi.org/10.1186/s12859-022-04643-9
 
 ## Release update
+- 2023-05-30:<br/>
+    - Fixed the error `ModuleNotFoundError: No module named 'Constants'` when using in Docker container
 - 2023-04-10:<br/>
     - Enhanced input sequence validation to identify sequence header not in the accepted format
     - Added `-b` option to specify the type of input sequences (DNA/protein), or leave it to the tool to determine
@@ -36,7 +38,7 @@ A pre-processing workflow consisting of the following three utilities is provide
 1. Sequence filtering (_filter_seqs.py_):<br/>
 Scan the input sequence file to identify and filter sequences for the following issues:<br/><br/>
     a. Unidentifiable amino acids/DNA bases (e.g. U as an amino acid or X as a DNA base)<br/>
-    b. Less than 95% of the amino acids/DNA bases are unambiguous (e.g. R or N for DNA)<br/>
+    b. Over 5% of the amino acids/DNA bases are ambiguous (e.g. R or N for DNA)<br/>
     c. Sequence length less than the Mash k-mer size used
     
 2. Sequence header whitespace replacement (_replace_seq_header_spaces.py_):<br/>
