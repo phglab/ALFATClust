@@ -9,6 +9,6 @@ dependencies:
   - leidenalg=0.8.3
   - scipy=1.6.0
   - numpy=1.20.1
-  - biopython=1.78
+  - biopython=1.79
   - mmseqs2=12.113e3
   - mash=2.2.2

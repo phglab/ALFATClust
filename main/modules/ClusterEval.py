@@ -3,6 +3,7 @@ from .Utils import cal_outlier_thres_by_iqr, read_seq_file_for_eval
 from Bio.Align import PairwiseAligner, substitution_matrices
 from multiprocessing import Pool
 from pandas import DataFrame
+from pickle import dumps, loads
 import numpy as np
 import os
 
@@ -67,11 +68,32 @@ def _generate_seq_pairs_for_align(seq_cluster_ptrs, global_edge_weight_mtrx, seq
 
     if seq_file_info.seq_type == AA:
         protein_score_mtrx = substitution_matrices.load(config.protein_score_mtrx)
-        seq_aligner_params = (AA, protein_score_mtrx, config.protein_gap_open_penalty,
-                              config.protein_gap_extend_penalty)
+        seq_aligner_same_seq_len = PairwiseAligner(mode='global',
+                                                   substitution_matrix=protein_score_mtrx,
+                                                   open_gap_score=config.protein_gap_open_penalty,
+                                                   extend_gap_score=config.protein_gap_extend_penalty)
+        seq_aligner_diff_seq_len = PairwiseAligner(mode='global',
+                                                   substitution_matrix=protein_score_mtrx,
+                                                   query_open_gap_score=config.protein_gap_open_penalty,
+                                                   query_extend_gap_score=config.protein_gap_extend_penalty,
+                                                   target_internal_open_gap_score=config.protein_gap_open_penalty,
+                                                   target_internal_extend_gap_score=config.protein_gap_extend_penalty)
     elif seq_file_info.seq_type == DNA:
-        seq_aligner_params = (DNA, config.dna_match_score, config.dna_mismatch_penalty, config.dna_gap_open_penalty,
-                              config.dna_gap_extend_penalty)
+        seq_aligner_same_seq_len = PairwiseAligner(mode='global',
+                                                   match_score=config.dna_match_score,
+                                                   mismatch_score=config.dna_mismatch_penalty,
+                                                   open_gap_score=config.dna_gap_open_penalty,
+                                                   extend_gap_score=config.dna_gap_extend_penalty)
+        seq_aligner_diff_seq_len = PairwiseAligner(mode='global',
+                                                   match_score=config.dna_match_score,
+                                                   mismatch_score=config.dna_mismatch_penalty,
+                                                   query_open_gap_score=config.dna_gap_open_penalty,
+                                                   query_extend_gap_score=config.dna_gap_extend_penalty,
+                                                   target_internal_open_gap_score=config.dna_gap_open_penalty,
+                                                   target_internal_extend_gap_score=config.dna_gap_extend_penalty)
+        
+    seq_aligner_byte_obj_same_len = dumps(seq_aligner_same_seq_len)
+    seq_aligner_byte_obj_diff_len = dumps(seq_aligner_diff_seq_len)
 
     cluster_to_seq_recs_map = read_seq_file_for_eval(seq_file_info.seq_file_path,
                                                      seq_id_to_non_singleton_cluster_id_map)
@@ -85,7 +107,12 @@ def _generate_seq_pairs_for_align(seq_cluster_ptrs, global_edge_weight_mtrx, seq
 
         for seq_rec in cluster_seq_recs:
             if seq_rec.id != center_seq_rec.id:
-                seq_rec_pairs_to_align.append((center_seq_rec, seq_rec, cluster_id) + seq_aligner_params)
+                if len(center_seq_rec.seq) == len(seq_rec.seq):
+                    seq_aligner_bype_obj = seq_aligner_byte_obj_same_len
+                else:
+                    seq_aligner_bype_obj = seq_aligner_byte_obj_diff_len
+                
+                seq_rec_pairs_to_align.append((center_seq_rec, seq_rec, cluster_id, seq_aligner_bype_obj))
 
     return seq_rec_pairs_to_align
 
@@ -94,35 +121,7 @@ def _cal_seq_ident(seq_rec_pair_to_align):
     seq2 = seq_rec_pair_to_align[1].seq
     seq1_len = len(seq1)
     seq2_len = len(seq2)
-
-    if seq1_len == seq2_len:
-        if seq_rec_pair_to_align[3] == AA:
-            seq_aligner = PairwiseAligner(mode='global',
-                                          substitution_matrix=seq_rec_pair_to_align[4],
-                                          open_gap_score=seq_rec_pair_to_align[5],
-                                          extend_gap_score=seq_rec_pair_to_align[6])
-        elif seq_rec_pair_to_align[3] == DNA:
-            seq_aligner = PairwiseAligner(mode='global',
-                                          match_score=seq_rec_pair_to_align[4],
-                                          mismatch_score=seq_rec_pair_to_align[5],
-                                          open_gap_score=seq_rec_pair_to_align[6],
-                                          extend_gap_score=seq_rec_pair_to_align[7])
-    else:
-        if seq_rec_pair_to_align[3] == AA:
-            seq_aligner = PairwiseAligner(mode='global',
-                                          substitution_matrix=seq_rec_pair_to_align[4],
-                                          query_open_gap_score=seq_rec_pair_to_align[5],
-                                          query_extend_gap_score=seq_rec_pair_to_align[6],
-                                          target_internal_open_gap_score=seq_rec_pair_to_align[5],
-                                          target_internal_extend_gap_score=seq_rec_pair_to_align[6])
-        elif seq_rec_pair_to_align[3] == DNA:
-            seq_aligner = PairwiseAligner(mode='global',
-                                          match_score=seq_rec_pair_to_align[4],
-                                          mismatch_score=seq_rec_pair_to_align[5],
-                                          query_open_gap_score=seq_rec_pair_to_align[6],
-                                          query_extend_gap_score=seq_rec_pair_to_align[7],
-                                          target_internal_open_gap_score=seq_rec_pair_to_align[6],
-                                          target_internal_extend_gap_score=seq_rec_pair_to_align[7])
+    seq_aligner = loads(seq_rec_pair_to_align[3])
 
     if seq1_len > seq2_len:
         short_seq = seq2
