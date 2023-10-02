@@ -108,7 +108,7 @@ Convert RNA sequences into DNA sequences for clustering
         - numpy (1.20.1)
         - scipy (1.6.0)
         - pandas (1.2.2)
-        - biopython (1.78)
+        - biopython (1.79)
         - python-igraph (0.8.3)
         - leidenalg (0.8.3)
 
