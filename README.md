@@ -6,13 +6,15 @@ Biological sequence clustering tool with dynamic threshold for individual cluste
 Chiu, J.K.H., Ong, R.TH. Clustering biological sequences with dynamic sequence similarity threshold. *BMC Bioinformatics* 23, 108 (2022). https://doi.org/10.1186/s12859-022-04643-9
 
 ## Release update
+- 2023-10-02:<br/>
+    - Fixed the possible incorrect similarity evaluation report for amino acid sequences. **Requires rebuilding the Conda/Docker image**.
 - 2023-05-30:<br/>
     - Fixed the error `ModuleNotFoundError: No module named 'Constants'` when using in Docker container
 - 2023-04-10:<br/>
     - Enhanced input sequence validation to identify sequence header not in the accepted format
     - Added `-b` option to specify the type of input sequences (DNA/protein), or leave it to the tool to determine
     - Added a new utility to filter sequences that will be rejected during clustering
-    - Added a new utility to replace all white spaces by underscore (_) characters in the sequence header
+    - Added a new utility to replace all white spaces with underscore (_) characters in the sequence header
 - 2023-03-14:<br/>
     - Added `-n` option to disable reverse complement for DNA sequences when estimating their pairwise distances.
 - 2022-11-05:<br/>
